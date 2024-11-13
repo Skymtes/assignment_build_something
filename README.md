@@ -19,5 +19,5 @@ The only service that should be a load balancer in practice is the root_service 
 The upload_service and list_service are completely independent and should be able to scale infinitely except for the required connection to the database.
 The database should also be infinitely scalable but that is something to investigate further.
 
-
+![Alt text](System_architecture.png)
 
