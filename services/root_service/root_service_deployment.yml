@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: root-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: root-service
+  template:
+    metadata:
+      labels:
+        app: root-service
+    spec:
+      containers:
+      - name: root-service
+        image: sild20/root_service:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: CASSANDRA_HOST
+          value: cassandra-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: root-service
+spec:
+  selector:
+    app: root-service
+  ports:
+  - protocol: TCP
+    port: 8000
+    targetPort: 8000
+  type: LoadBalancer

@@ -1,0 +1,47 @@
+services:
+  cassandra:
+    image: cassandra:latest
+    container_name: cassandra-service
+    ports:
+      - "9042:9042"
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+
+  root_service:
+    build:
+      context: ./root_service
+    image: sild20/root_service:latest
+    container_name: root_service
+    depends_on:
+      - cassandra
+    environment:
+      - CASSANDRA_HOST=cassandra
+    ports:
+      - "8000:8000"
+
+  upload_service:
+    build:
+      context: ./upload_service
+    image: sild20/upload_service:latest
+    container_name: upload_service
+    depends_on:
+      - cassandra
+    environment:
+      - CASSANDRA_HOST=cassandra
+    ports:
+      - "8001:8001"
+
+  list_service:
+    build:
+      context: ./list_service
+    image: sild20/list_service:latest
+    container_name: list_service
+    depends_on:
+      - cassandra
+    environment:
+      - CASSANDRA_HOST=cassandra
+    ports:
+      - "8002:8002"
+
+volumes:
+  cassandra_data:

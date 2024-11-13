@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: list-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: list-service
+  template:
+    metadata:
+      labels:
+        app: list-service
+    spec:
+      containers:
+      - name: list-service
+        image: sild20/list_service:latest
+        ports:
+        - containerPort: 8002
+        env:
+        - name: CASSANDRA_HOST
+          value: cassandra-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: list-service
+spec:
+  selector:
+    app: list-service
+  ports:
+  - protocol: TCP
+    port: 8002
+    targetPort: 8002
+  type: LoadBalancer

@@ -1,0 +1,165 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: cassandra-pv
+spec:
+  capacity:
+    storage: 10Mi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /data/cassandra
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cassandra
+spec:
+  serviceName: "cassandra-service"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cassandra
+  template:
+    metadata:
+      labels:
+        app: cassandra
+    spec:
+      containers:
+      - name: cassandra
+        image: cassandra:latest
+        ports:
+        - containerPort: 9042
+          name: cassandra-port
+        volumeMounts:
+        - name: cassandra-data
+          mountPath: /var/lib/cassandra
+  volumeClaimTemplates:
+  - metadata:
+      name: cassandra-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Mi  
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cassandra-service
+spec:
+  ports:
+    - port: 9042
+  clusterIP: None
+  selector:
+    app: cassandra
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: upload-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: upload-service
+  template:
+    metadata:
+      labels:
+        app: upload-service
+    spec:
+      containers:
+      - name: upload-service
+        image: sild20/upload_service:latest
+        ports:
+        - containerPort: 8001
+        env:
+        - name: CASSANDRA_HOST
+          value: cassandra-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: upload-service
+spec:
+  selector:
+    app: upload-service
+  ports:
+  - protocol: TCP
+    port: 8001
+    targetPort: 8001
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: root-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: root-service
+  template:
+    metadata:
+      labels:
+        app: root-service
+    spec:
+      containers:
+      - name: root-service
+        image: sild20/root_service:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: CASSANDRA_HOST
+          value: cassandra-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: root-service
+spec:
+  selector:
+    app: root-service
+  ports:
+  - protocol: TCP
+    port: 8000
+    targetPort: 8000
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: list-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: list-service
+  template:
+    metadata:
+      labels:
+        app: list-service
+    spec:
+      containers:
+      - name: list-service
+        image: sild20/list_service:latest
+        ports:
+        - containerPort: 8002
+        env:
+        - name: CASSANDRA_HOST
+          value: cassandra-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: list-service
+spec:
+  selector:
+    app: list-service
+  ports:
+  - protocol: TCP
+    port: 8002
+    targetPort: 8002
+  type: LoadBalancer
+---
